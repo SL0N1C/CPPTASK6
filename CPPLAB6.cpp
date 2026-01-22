@@ -23,10 +23,11 @@ struct rar_file_fixed {
     uint32_t attr;
 };
 #pragma pack(pop)
+
 int main() {
     std::ifstream in("Example.rar", ios::binary);
     if (!in) return 1;
-    in.seekg(7, ios::beg);
+    in.seekg(7, std::ios::beg);
     while (true) {
         streampos start = in.tellg();
         rar_header h{};
@@ -41,9 +42,15 @@ int main() {
             if (!in) break;
             string name(nameBuf.begin(), nameBuf.end());
             cout << name << " " << f.pack_size << endl;
+            in.seekg(start + (std::streamoff)h.head_size);
+            if (!in) break;
+            in.seekg((streamoff)f.pack_size, ios::cur);
+            if (!in) break;
         }
-        in.seekg(start + (streamoff)h.head_size);
-        if (!in) break;
+        else {
+            in.seekg(start + (streamoff)h.head_size);
+            if (!in) break;
+        }
     }
     return 0;
 }
