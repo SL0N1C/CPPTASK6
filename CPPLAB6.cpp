@@ -1,28 +1,56 @@
-﻿#include <iostream>
+﻿#include <cstdint>
 #include <fstream>
-
+#include <iostream>
+#include <vector>
+#include <string>
 using namespace std;
-
 #pragma pack(push, 1)
 struct rar_header {
-    unsigned short head_crc;
-    unsigned char  head_type;
-    unsigned short head_flags;
-    unsigned short head_size;
+    uint16_t head_crc;
+    uint8_t  head_type;
+    uint16_t head_flags;
+    uint16_t head_size;
+};
+struct rar_file_fixed {
+    uint32_t pack_size;
+    uint32_t unp_size;
+    uint8_t  host_os;
+    uint32_t file_crc;
+    uint32_t file_time;
+    uint8_t  unp_ver;
+    uint8_t  method;
+    uint16_t name_size;
+    uint32_t attr;
 };
 #pragma pack(pop)
 
 int main() {
-    ifstream in("Example.rar", ios::binary);
+    std::ifstream in("Example.rar", ios::binary);
     if (!in) return 1;
-    in.seekg(7, ios::beg);
+    in.seekg(7, std::ios::beg);
     while (true) {
-        rar_header h;
-        in.read((char*)&h, sizeof(h));
+        streampos start = in.tellg();
+        rar_header h{};
+        in.read(reinterpret_cast<char*>(&h), sizeof(h));
         if (!in) break;
-        cout << (int)h.head_type << " " << h.head_size << endl;
-        in.seekg((int)h.head_size - (int)sizeof(rar_header), ios::cur);
-        if (!in) break;
+        if (h.head_type == 0x74) {
+            rar_file_fixed f{};
+            in.read(reinterpret_cast<char*>(&f), sizeof(f));
+            if (!in) break;
+            vector<char> nameBuf(f.name_size);
+            in.read(nameBuf.data(), f.name_size);
+            if (!in) break;
+            string name(nameBuf.begin(), nameBuf.end());
+            cout << name << " " << f.pack_size << endl;
+            in.seekg(start + (std::streamoff)h.head_size);
+            if (!in) break;
+            in.seekg((streamoff)f.pack_size, ios::cur);
+            if (!in) break;
+        }
+        else {
+            in.seekg(start + (streamoff)h.head_size);
+            if (!in) break;
+        }
     }
     return 0;
 }
