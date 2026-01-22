@@ -1,0 +1,22 @@
+# Build folders
+build/
+cmake-build-*/
+out/
+
+# Compiled files
+*.o
+*.obj
+*.exe
+*.dll
+*.so
+*.a
+*.lib
+
+# IDE
+.vscode/
+.idea/
+*.user
+*.suo
+*.VC.db
+*.VC.opendb
+.vs/
