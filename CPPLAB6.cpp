@@ -1,6 +1,8 @@
 ﻿#include <cstdint>
 #include <fstream>
 #include <iostream>
+#include <vector>
+#include <string>
 using namespace std;
 #pragma pack(push, 1)
 struct rar_header {
@@ -9,7 +11,6 @@ struct rar_header {
     uint16_t head_flags;
     uint16_t head_size;
 };
-
 struct rar_file_fixed {
     uint32_t pack_size;
     uint32_t unp_size;
@@ -22,11 +23,10 @@ struct rar_file_fixed {
     uint32_t attr;
 };
 #pragma pack(pop)
-
 int main() {
     std::ifstream in("Example.rar", ios::binary);
     if (!in) return 1;
-    in.seekg(7, std::ios::beg);
+    in.seekg(7, ios::beg);
     while (true) {
         streampos start = in.tellg();
         rar_header h{};
@@ -36,9 +36,13 @@ int main() {
             rar_file_fixed f{};
             in.read(reinterpret_cast<char*>(&f), sizeof(f));
             if (!in) break;
-            cout << "FILE_HEAD " << f.pack_size << " " << f.name_size << endl;
+            vector<char> nameBuf(f.name_size);
+            in.read(nameBuf.data(), f.name_size);
+            if (!in) break;
+            string name(nameBuf.begin(), nameBuf.end());
+            cout << name << " " << f.pack_size << endl;
         }
-        in.seekg(start + (std::streamoff)h.head_size);
+        in.seekg(start + (streamoff)h.head_size);
         if (!in) break;
     }
     return 0;
